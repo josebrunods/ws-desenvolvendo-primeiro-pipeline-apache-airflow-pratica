@@ -1,5 +1,11 @@
 # ws-desenvolvendo-primeiro-pipeline-apache-airflow-pratica
-Workshop: Desenvolvendo Seu Primeiro Pipeline no Apache Airflow na Prática
+<div align="center">
+
+[![Status](https://img.shields.io/badge/status-active-success.svg)]()
+
+</div>
+
+### Workshop: Desenvolvendo Seu Primeiro Pipeline no Apache Airflow na Prática
 
 
 Seja muito bem vindo ao nosso workshop em que focamos em práticas de Apache Airflow, nossa principal objetivo e que você se diverta com a gente tratando de um case em que vamos usar muito Python e claro entender como funciona o Apache Airflow.
