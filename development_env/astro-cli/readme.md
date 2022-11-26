@@ -13,7 +13,7 @@ https://github.com/astronomer/astro-cli
 Let's start with simple command line to setup our development environment, first access your project folder in your local machine, then execute the commands:
 
 ```sh
-# create project 
+# create project
 astro dev init
 
 # start the compenents
@@ -46,7 +46,14 @@ astronomer-providers==1.10.0
 # <https://pypi.org/project/minio/>
 minio==7.1.12
 ```
+Add variables to enable features on Astro CLI
 
+```sh
+# add variables to .env file
+
+AIRFLOW__CORE__ENABLE_XCOM_PICKLING=True
+AIRFLOW__ASTRO_SDK__SQL_SCHEMA=ASTRO_SDK_SCHEMA
+```
 
 After copy the files and content let's restart our astro cli project:
 
