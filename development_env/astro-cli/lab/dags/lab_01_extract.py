@@ -18,9 +18,8 @@ import pandas as pd
 
 # connections
 
-#S3_FILE_PATH_BUSINESS = "s3://landing-workshop/business/yelp_academic_dataset_business_2018.json"
-S3_FILE_PATH_USERS = "s3://landing-workshop/user/users_2022_10_11_16_8_16.json"
-OUTPUT_FILE_PATH_USERS = "s3://landing-workshop/user/"
+S3_FILE_PATH_BUSINESS = "s3://landing-workshop/business/yelp_academic_dataset_business_2018.json"
+OUTPUT_FILE_PATH_BUSINESS = "s3://landing-workshop/business"
 AWS_CONN_ID = "aws_default"
 
 
@@ -38,16 +37,6 @@ default_args = {
     "retries": 1,
     "retry_delay": 0
 }
-
-
-# transformation time
-@aql.transform
-def clean_dataframe(input_dataframe: pd.DataFrame):  
-    """get the first 100 rows in business dataframe."""
-    return """
-            SELECT name,city,state,category from {{input_dataframe}} limit 100;
-            """
-
 
 
 # declare dag
@@ -69,42 +58,55 @@ def ingest_data():
     init = DummyOperator(task_id="init")
     
     
-    #business = aql.load_file(
-    #   task_id = "business", 
-    #   input_file=File(path=S3_FILE_PATH_BUSINESS,conn_id=AWS_CONN_ID,filetype=FileType.NDJSON))
+    business = aql.load_file(
+       task_id = "business", 
+       input_file=File(path=S3_FILE_PATH_BUSINESS,conn_id=AWS_CONN_ID,filetype=FileType.NDJSON))
     
-    user = aql.load_file(
-       task_id = "user", 
-       input_file=File(path=S3_FILE_PATH_USERS,conn_id=AWS_CONN_ID,filetype=FileType.JSON))
+   
+    @aql.dataframe(columns_names_capitalization="original")
+    def extract_top_5_business(input_df: pd.DataFrame):
+        print(f"Total Number of records: {len(input_df)}")
+        top_5_business = input_df.sort_values(by="review_count", ascending=False)[["review_count", "name", "city"]].head(
+            5
+        )
+        print(f"Top 5 business: {top_5_business}")
+        return top_5_business
+
+
+    
+        
+    # Running transformation using dataframe
+    transf_df = extract_top_5_business(input_df=business)
     
     
-    # clean data and save in MinIO
-    transf_df = clean_dataframe(user)
     
-    save_file_to_minio = aql.export_file(
-        task_id="save_file_to_minio",
+    # create export json
+    save_json_to_minio = aql.export_file(
+        task_id="save_json_to_minio",
         input_data=transf_df,
         output_file=File(
-            path=f"{OUTPUT_FILE_PATH_USERS}/users.json",
+            path=f"{OUTPUT_FILE_PATH_BUSINESS}/output_business.json",
             conn_id=AWS_CONN_ID,
         ),
         if_exists="replace",
-    )      
-
-
-
-
-
-
-# [END transform_example_4]
-
-
+    )
+    
+    save_parquet_to_minio = aql.export_file(
+        task_id="save_parquet_to_minio",
+        input_data=transf_df,
+        output_file=File(
+            path=f"{OUTPUT_FILE_PATH_BUSINESS}/output_business.parquet",
+            conn_id=AWS_CONN_ID,
+        ),
+        if_exists="replace",
+    )
+          
 
     # finish
     finish = DummyOperator(task_id="finish")
 
     # define sequence
-    init >> user >> save_file_to_minio >> finish
+    init >> business >> save_json_to_minio >> save_parquet_to_minio >> finish
 
 
 # init dag
